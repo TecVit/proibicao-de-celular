@@ -1,33 +1,23 @@
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 import { NextResponse } from 'next/server';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 export async function GET() {
     try {
         const start = Date.now();
-        const browserPromise = puppeteer.launch({
-            headless: true,
-            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
-            executablePath: await chromium.executablePath(),
-        });
-        console.log(`Chromium inicializado em ${Date.now() - start}ms`)
 
-        // No Plano Gratuito do NextJS a API só tem 10 segundos para te dar uma resposta :)
-        const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout excedido')), 4000)
-        );
+        // Faz a requisição HTTP para obter o HTML da página
+        const { data } = await axios.get('https://peticaopublica.com.br/pview.aspx?pi=BR146748');
+        console.log(`Requisição realizada em ${Date.now() - start}ms`);
 
-        const browser = await Promise.race([browserPromise, timeoutPromise]);
+        // Carrega o HTML no Cheerio para fazer o parsing
+        const $ = cheerio.load(data);
 
-        const page = await browser.newPage();
-
-        const url = "https://peticaopublica.com.br/pview.aspx?pi=BR146748";
-        await page.goto(url, { waitUntil: 'networkidle0' });
-        const text = await page.$eval('.npeople', element => element.textContent);
-        
-        await browser.close();
+        // Encontra o texto da div com a classe '.npeople'
+        const text = $('.npeople').text();
 
         if (text) {
+            // Retorna o número de assinaturas após remover pontuações
             return NextResponse.json({
                 status: 200,
                 subscriptionNumbers: parseInt(text.replace(/[.,]/g, '')),
@@ -36,7 +26,7 @@ export async function GET() {
             return NextResponse.json({
                 status: 404,
                 message: "Número não encontrado",
-            })
+            });
         }
     } catch (error) {
         console.error('Erro ao buscar número:', error);
