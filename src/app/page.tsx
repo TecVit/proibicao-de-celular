@@ -8,22 +8,19 @@ import Counter from './components/Counter';
 import { FaTiktok } from 'react-icons/fa';
 
 async function getData() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptionNumbers`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/subscriptionNumbers`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
     cache: 'force-cache',
     next: {
-      revalidate: 10
+      revalidate: 60
     }
   });
   
   if (!res.ok) {
-    return {
-      status: 404,
-      message: "Número não encontrado"
-    };
+    return null;
   }
 
   const data = await res.json();
