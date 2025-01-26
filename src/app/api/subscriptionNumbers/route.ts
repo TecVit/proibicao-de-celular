@@ -5,13 +5,28 @@ export async function GET() {
     try {
         const start = Date.now();
 
-        const url = 'https://corsproxy.io/?url=https://peticaopublica.com.br/pview.aspx?pi=BR146748';
-          
+        // const url = `${process.env.NEXT_PUBLIC_API_URL}/https://peticaopublica.com.br/pview.aspx?pi=BR146748`;
+        const url = "https://corsproxy.io/?url=https://peticaopublica.com.br/pview.aspx?pi=BR146748";
+        
         const response = await fetch(url, {
             method: "GET",
             headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept-Language": "pt-BR,pt;q=0.9",
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip, deflate, br, zstd",
+                "Accept-Language": "pt-PT,pt;q=0.8,en;q=0.5,en-US;q=0.3",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Length": "0",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Host": "corsproxy.io",
+                "Origin": process.env.NEXT_PUBLIC_URL || "",
+                "Pragma": "no-cache",
+                "Priority": "u=0",
+                "Referer": process.env.NEXT_PUBLIC_URL || "",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "cross-site",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0",
             },
         });
 
