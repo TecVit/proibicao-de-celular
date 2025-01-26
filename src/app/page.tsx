@@ -8,7 +8,7 @@ import Counter from './components/Counter';
 import { FaTiktok } from 'react-icons/fa';
 
 async function getData() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/subscriptionNumbers`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptionNumbers`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
