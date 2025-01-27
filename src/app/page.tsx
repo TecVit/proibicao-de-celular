@@ -29,7 +29,7 @@ async function getData() {
 
 // Função de React Server Component
 export default async function Home() {
-  const counter = await getData() || 841124;
+  const counter = await getData() || 1052174;
 
   return (
     <main className="container-landing">
