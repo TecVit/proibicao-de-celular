@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Desabilitar execução de JavaScript
-        await page.setJavaScriptEnabled(false);
+        // await page.setJavaScriptEnabled(false);
 
         const url = "https://peticaopublica.com.br/pview.aspx?pi=BR146748";
         await page.goto(url, { waitUntil: 'domcontentloaded' });
