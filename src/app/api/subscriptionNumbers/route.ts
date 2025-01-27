@@ -1,42 +1,68 @@
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { NextResponse } from 'next/server';
-import * as cheerio from 'cheerio';
 
 export async function GET() {
     try {
         const start = Date.now();
+        const browserPromise = puppeteer.launch({
+            headless: true,
+            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: await chromium.executablePath(),
+        });
+        console.log(`Chromium inicializado em ${Date.now() - start}ms`);
 
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/https://peticaopublica.com.br/pview.aspx?pi=BR146748`;
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout excedido')), 6000)
+        );
         
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Origin": process.env.NEXT_PUBLIC_URL || "http://localhost:3000",
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0",
-                "X-Requested-With": "XMLHttpRequest"
-            },
+        const browser = await Promise.race([browserPromise, timeoutPromise]);
+        const page = await browser.newPage();
+
+        // Bloquear imagens, CSS, fontes e JavaScript
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            const url = request.url();
+            if (
+                url.endsWith('.png') ||
+                url.endsWith('.jpg') ||
+                url.endsWith('.jpeg') ||
+                url.endsWith('.gif') ||
+                url.endsWith('.css') ||
+                url.endsWith('.woff') ||
+                url.endsWith('.woff2') ||
+                url.endsWith('.ttf') ||
+                url.endsWith('.js') ||
+                url.endsWith('.svg') ||
+                url.endsWith('.mp4') ||
+                url.endsWith('.webm') ||
+                url.includes('font')
+            ) {
+                request.abort();
+            } else {
+                request.continue();
+            }
         });
 
-        if (!response.ok) {
-            console.log(response);
-            throw new Error('Erro ao carregar a página');
-        }
+        // Desabilitar execução de JavaScript
+        await page.setJavaScriptEnabled(false);
 
-        const html = await response.text();
-        console.log(`Requisição realizada em ${Date.now() - start}ms`);
+        const url = "https://peticaopublica.com.br/pview.aspx?pi=BR146748";
+        await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-        const $ = cheerio.load(html);
-
-        const text = $('.npeople').text().trim();
-
+        const text = await page.$eval('.npeople', element => element.textContent);
+        
+        await browser.close();
+        
         if (text) {
             return NextResponse.json({
                 status: 200,
-                subscriptionNumbers: parseInt(text.replace(/[.,]/g, ''), 10),
+                subscriptionNumbers: parseInt(text.replace(/[.,]/g, '')),
             });
         } else {
             return NextResponse.json({
                 status: 404,
-                message: 'Número não encontrado',
+                message: "Número não encontrado",
             });
         }
     } catch (error) {
