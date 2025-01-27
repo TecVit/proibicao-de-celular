@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
 
         // Obter o HTML da página
         const html = await page.content();
+        console.log(html);
 
         // Usar Cheerio para analisar o HTML
         const $ = cheerio.load(html);
