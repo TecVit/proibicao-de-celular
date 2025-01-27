@@ -1,8 +1,11 @@
 import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
-import { NextResponse } from 'next/server';
+import * as cheerio from 'cheerio';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const urlParams = new URLSearchParams(request.url.split('?')[1]);
+    const waitTime = parseInt(urlParams.get('waitTime') || "5") || 5; // Default to 5 if not provided or invalid
     try {
         const start = Date.now();
         const browserPromise = puppeteer.launch({
@@ -13,9 +16,8 @@ export async function GET() {
         console.log(`Chromium inicializado em ${Date.now() - start}ms`);
 
         const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout excedido')), 6000)
+            setTimeout(() => reject(new Error('Timeout excedido')), 5000) // Limitar para 5 segundos
         );
-        
         const browser = await Promise.race([browserPromise, timeoutPromise]);
         const page = await browser.newPage();
 
@@ -50,8 +52,15 @@ export async function GET() {
         const url = "https://peticaopublica.com.br/pview.aspx?pi=BR146748";
         await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-        const text = await page.$eval('.npeople', element => element.textContent);
-        
+        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+
+        // Obter o HTML da página
+        const html = await page.content();
+
+        // Usar Cheerio para analisar o HTML
+        const $ = cheerio.load(html);
+        const text = $('.npeople').text();
+
         await browser.close();
         
         if (text) {
