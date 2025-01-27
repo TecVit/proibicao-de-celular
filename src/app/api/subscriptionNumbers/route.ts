@@ -4,12 +4,10 @@ import * as cheerio from 'cheerio';
 import { NextResponse, type NextRequest } from 'next/server';
 import { HTTPRequest } from 'puppeteer-core';
 
-// import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-// puppeteer.use(StealthPlugin());
-
 export async function GET(request: NextRequest) {
     const urlParams = new URLSearchParams(request.url.split('?')[1]);
     const waitTime = parseInt(urlParams.get('waitTime') || "0") || 0;
+    
     try {
         const start = Date.now();
         const browserPromise = puppeteer.launch({
@@ -29,32 +27,10 @@ export async function GET(request: NextRequest) {
         const browser = await browserPromise;
         const page = await browser.newPage();
 
-        // Bloquear imagens, CSS, fontes e JavaScript
+        // Bloquear imagens, CSS, fontes e JavaScript e adicionar cabeçalhos para as requisições
         await page.setRequestInterception(true);
         page.on('request', (req: HTTPRequest) => {
             const url = req.url();
-            if (
-                url.endsWith('.png') ||
-                url.endsWith('.jpg') ||
-                url.endsWith('.jpeg') ||
-                url.endsWith('.gif') ||
-                url.endsWith('.css') ||
-                url.endsWith('.woff') ||
-                url.endsWith('.woff2') ||
-                url.endsWith('.ttf') ||
-                url.endsWith('.js') ||
-                url.endsWith('.svg') ||
-                url.endsWith('.mp4') ||
-                url.endsWith('.webm') ||
-                url.includes('font')
-            ) {
-                req.abort();
-            } else {
-                req.continue();
-            }
-        });
-
-        page.on('request', (request) => {
             const headers = {
                 "Accept": "*/*",
                 "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -73,12 +49,29 @@ export async function GET(request: NextRequest) {
                 "TE": "trailers",
                 "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0",
             };
-            request.continue({ headers });
+
+            if (
+                url.endsWith('.png') ||
+                url.endsWith('.jpg') ||
+                url.endsWith('.jpeg') ||
+                url.endsWith('.gif') ||
+                url.endsWith('.css') ||
+                url.endsWith('.woff') ||
+                url.endsWith('.woff2') ||
+                url.endsWith('.ttf') ||
+                url.endsWith('.js') ||
+                url.endsWith('.svg') ||
+                url.endsWith('.mp4') ||
+                url.endsWith('.webm') ||
+                url.includes('font')
+            ) {
+                req.abort();
+            } else {
+                req.continue({ headers });
+            }
         });
 
-        // Desabilitar execução de JavaScript
-        // await page.setJavaScriptEnabled(false);
-
+        // Definindo o cookie necessário para a página
         const cookies = [
             {
               name: 'cf_clearance', 
@@ -88,6 +81,7 @@ export async function GET(request: NextRequest) {
         ];
         await page.setCookie(...cookies);
 
+        // Acessando a página
         const url = "https://peticaopublica.com.br/pview.aspx?pi=BR146748";
         await page.goto(url, { waitUntil: 'domcontentloaded' });
 
